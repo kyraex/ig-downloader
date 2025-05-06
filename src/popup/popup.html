@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Downloader</title>
+    <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="../style/fontawesome.min.css">
+</head>
+<body>
+    <div class="settings-container">
+        <h1 id="app-title">Settings</h1>
+        <p id="app-description">Configure your extension settings below:</p>
+        <div class="card">
+            <h2>Telegram API</h2>
+            <label for="telegramToken">Telegram Token:</label>
+            <div class="input-container">
+                <input type="password" id="telegramToken" placeholder="Enter your Telegram Token">
+                <span id="toggle-password"><i class="fa fa-eye"></i></span>
+            </div>
+            <label for="chatId">Chat ID:</label>
+            <input type="text" id="chatId" placeholder="Enter your Chat ID">
+            <small>Recipient must have access to the bot</small>
+        </div>
+        <button id="save-settings">Save</button>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>

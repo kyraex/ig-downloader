@@ -13,8 +13,12 @@
         "https://www.instagram.com/*"
     ],
     "action": {
+        "default_popup": "src/popup/popup.html",
         "default_icon": "icons/icon128.png"
     },
+    "permissions": [
+        "storage"
+    ],
     "content_scripts": [
         {
             "matches": [
@@ -28,7 +32,8 @@
                 "src/js/zip.js"
             ],
             "css": [
-                "src/style/style.css"
+                "src/style/style.css",
+                "src/style/fontawesome.min.css"
             ]
         },
         {
@@ -45,6 +50,22 @@
             ],
             "css": [],
             "world": "MAIN"
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "src/style/fontawesome.min.css",
+                "src/webfonts/fa-brands-400.woff2",
+                "src/webfonts/fa-regular-400.woff2",
+                "src/webfonts/fa-solid-900.woff2",
+                "src/webfonts/fa-brands-400.ttf",
+                "src/webfonts/fa-regular-400.ttf",
+                "src/webfonts/fa-solid-900.ttf"
+            ],
+            "matches": [
+                "https://www.instagram.com/*"
+            ]
         }
     ]
 }

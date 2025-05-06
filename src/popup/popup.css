@@ -1,0 +1,93 @@
+html {
+    min-width: 300px;
+    min-height: 300px;
+}
+
+body {
+    font-family: Helvetica,sans-serif, "Font Awesome 6 Free";
+}
+
+.input-container {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between input and icon */
+}
+
+.input-container input {
+    flex: 1;
+}
+
+.input-container .fa {
+    cursor: pointer;
+    color: #666;
+}
+
+.settings-container #toggle-password i {
+    margin-bottom: 7px;
+}
+
+.settings-container {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.settings-container h1 {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+}
+
+.settings-container p {
+    font-size: 1em;
+    margin-bottom: 20px;
+}
+
+.settings-container #save-settings {
+    background-color: #2b8dca;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin-top: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.card h2 {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+}
+
+.card label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.card input {
+    width: 90%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.card small {
+    display: block;
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 10px;
+}

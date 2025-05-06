@@ -221,6 +221,66 @@
     }
 }
 
+/* Wrapper for each media item */
+.media-wrapper {
+    position: relative;
+    margin-bottom: 20px; /* Add spacing between media items */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Telegram button styling */
+.action-button {
+    position: absolute;
+    bottom: 10px;
+    right: 5px;
+    background-color: #0088cc; /* Telegram blue */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 10px 7px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    z-index: 10;
+    transition: background-color 0.3s ease;
+}
+
+.action-button:hover {
+    background-color: #005f8c; /* Darker blue on hover */
+}
+
+.send-button {
+    width: 120px;
+    height: 30px;
+    color: white;
+    outline: none;
+    font-family: Roboto, sans-serif;
+    font-weight: bold;
+    font-size: large;
+    border: none;
+    border-radius: 15px;
+    position: fixed;
+    bottom: 20px;
+    right: 150px; /* Positioned beside the download button */
+    text-align: center;
+    cursor: pointer;
+    background-color: #0088cc; /* Telegram blue */
+    transition: 0.3s;
+    z-index: 1000000;
+}
+
+.send-button:hover {
+    background-color: #005f8c; /* Darker blue on hover */
+}
+
+.send-button.hide {
+    transform-origin: 85% bottom;
+    transform: scale(0);
+    pointer-events: none;
+    opacity: 0.6;
+}
+
 /*Loading Spin in photos conatiner*/
 
 @keyframes spin {

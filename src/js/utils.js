@@ -177,6 +177,7 @@ async function handleDownload() {
     let data = null;
     const TITLE_CONTAINER = document.querySelector('.title-container').firstElementChild;
     const DISPLAY_CONTAINER = document.querySelector('.display-container');
+    const SEND_BUTTON = document.querySelector('.send-button');
     const option = shouldDownload();
     const totalItemChecked = Array.from(document.querySelectorAll('.overlay.checked'));
     if (TITLE_CONTAINER.classList.contains('multi-select')
@@ -185,7 +186,10 @@ async function handleDownload() {
         && totalItemChecked.length !== 0) {
         return saveZip();
     }
-    requestAnimationFrame(() => { DISPLAY_CONTAINER.classList.remove('hide'); });
+    requestAnimationFrame(() => { 
+        DISPLAY_CONTAINER.classList.remove('hide'); 
+        SEND_BUTTON.classList.remove('hide');
+    });
     if (option === 'none') return;
     setDownloadState('ready');
     option === 'post' ? data = await downloadPostPhotos() : data = await downloadStoryPhotos(option);
@@ -209,10 +213,13 @@ function renderMedias(data) {
             controls: ''
         };
         const ITEM_TEMPLATE =
-            `<div>
-				${item.isVideo ? `<video></video>` : '<img/>'}
-				<div class="overlay">✔</div>
-			</div>`;
+            `<div class="media-wrapper">
+                <button class="action-button">
+                    <svg aria-label="Share" class="x1lliihq x1n2onr6 xyb1xck" fill="currentColor" height="24" role="img" viewBox="0 0 24 24" width="24"><title>Share</title><line fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2" x1="22" x2="9.218" y1="3" y2="10.083"></line><polygon fill="none" points="11.698 20.334 22 3.001 2 3.001 9.218 10.084 11.698 20.334" stroke="currentColor" stroke-linejoin="round" stroke-width="2"></polygon></svg>
+                </button>
+                ${item.isVideo ? `<video></video>` : '<img/>'}
+                <div class="overlay">✔</div>
+            </div>`;
         const itemDOM = new DOMParser().parseFromString(ITEM_TEMPLATE, 'text/html').body.firstElementChild;
         const media = itemDOM.querySelector('img, video');
         const selectBox = itemDOM.querySelector('.overlay');
@@ -226,6 +233,29 @@ function renderMedias(data) {
                 selectBox.classList.toggle('checked');
             }
             else saveMedia(media, media.title.replaceAll(' | ', '_') + `${item.isVideo ? '.mp4' : '.jpeg'}`);
+        });
+        itemDOM.querySelector('.action-button').addEventListener('click', async (e) => {
+            const button = e.currentTarget;
+            const originalSVG = button.innerHTML; // Save the original SVG
+            const sendingSVG = `
+                <svg class="sending-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" width="24" height="24">
+                    <circle cx="25" cy="25" r="20" stroke="currentColor" stroke-width="4" fill="none" stroke-dasharray="31.4" stroke-linecap="round">
+                        <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite" />
+                    </circle>
+                </svg>
+            `;
+        
+            // Replace the button's SVG with the "Sending" SVG
+            button.innerHTML = sendingSVG;
+        
+            try {
+                await sendMedia(media); // Perform the operation
+            } catch (error) {
+                console.error('Error sending media:', error);
+            } finally {
+                // Restore the original SVG after the operation is complete
+                button.innerHTML = originalSVG;
+            }
         });
         fragment.appendChild(itemDOM);
     });
@@ -257,5 +287,204 @@ function isValidJson(string) {
         return true;
     } catch {
         return false;
+    }
+}
+
+async function handleSend() {
+    let data = null;
+    const TITLE_CONTAINER = document.querySelector('.title-container').firstElementChild;
+    const DISPLAY_CONTAINER = document.querySelector('.display-container');
+    const option = shouldDownload();
+    const totalItemChecked = Array.from(document.querySelectorAll('.overlay.checked'));
+    if (TITLE_CONTAINER.classList.contains('multi-select')
+        && !DISPLAY_CONTAINER.classList.contains('hide')
+        && option === 'none'
+        && totalItemChecked.length !== 0) {
+        const SEND_BUTTON = document.querySelector('.send-button');
+        SEND_BUTTON.classList.add('loading');
+        SEND_BUTTON.textContent = 'Loading...';
+        SEND_BUTTON.disabled = true;
+        const medias = Array.from(document.querySelectorAll('.overlay.checked')).map(item => item.previousElementSibling);
+        const username = medias[0].title.split(' | ')[0];
+        async function fetchSelectedMedias() {
+            let count = 0;
+            const results = await Promise.allSettled(medias.map(async (media) => {
+                const res = await fetch(media.src);
+                const blob = await res.blob();
+                const data = {
+                    title: media.title.replaceAll(' | ', '_'),
+                    type: media.nodeName === 'VIDEO' ? 'video' : 'photo',
+                    blob: blob,
+                };
+                data.title = media.nodeName === 'VIDEO' ? `${data.title}.mp4` : `${data.title}.jpeg`;
+                count++;
+                SEND_BUTTON.textContent = `${count}/${medias.length}`;
+                return data;
+            }));
+            results.forEach(promise => {
+                if (promise.status === 'rejected') throw new Error('Fail to fetch');
+            });
+            return results.map(promise => promise.value);
+        }
+        try {
+            const medias = await fetchSelectedMedias();
+            const caption = `<a href="https://www.instagram.com/${username}">@${username}</a>`;
+            // If count of media is 1, send it as a single media
+            if (medias.length == 1) {
+                const media = medias[0];
+                await sendToTelegram(media.blob,caption, media.type, true);
+            } else {
+                const content = {
+                    'medias': [],
+                    'blobs': [] 
+                };
+                medias.forEach(media => {
+                    let item = {
+                        type: media.type,
+                        media: 'attach://'+media.title,
+                        parse_mode: 'html'
+                    };
+                    if (content.medias.length == 0) item.caption = caption;
+                    content.medias.push(item);
+                    content.blobs.push({
+                        title: media.title,
+                        blob: media.blob,
+                    });
+                });
+    
+                await sendBulkToTelegram(content, true);
+            }
+            document.querySelectorAll('.overlay').forEach(element => {
+                element.classList.remove('checked');
+            });
+            resetSendState();
+        } catch (error) {
+            console.log(error);
+            resetSendState();
+        }
+
+    }
+}
+
+function resetSendState() {
+    const SEND_BUTTON = document.querySelector('.send-button');
+    SEND_BUTTON.classList.remove('loading');
+    SEND_BUTTON.textContent = 'Send';
+    SEND_BUTTON.disabled = false;
+}
+
+async function getConfig() {
+    return new Promise((resolve, reject) => {
+        chrome.storage.sync.get(['ig_downloader_settings'], (result) => {
+            if (chrome.runtime.lastError) {
+                console.error('Error retrieving settings:', chrome.runtime.lastError);
+                reject(chrome.runtime.lastError);
+            } else {
+                const settings = result.ig_downloader_settings || {};
+                const config = {
+                    telegram: settings.telegram || {
+                        token: '',
+                        chatId: ''
+                    }
+                };
+                resolve(config);
+            }
+        });
+    }
+    );
+}
+
+async function sendMedia(media) {
+    try {
+        const response = await fetch(media.src);
+        const blob = await response.blob();
+        const username = media.title.split(' | ')[0];
+        const type = media.nodeName === 'VIDEO' ? 'video' : 'photo';
+        const caption = `<a href="https://www.instagram.com/${username}">@${username}</a>`;
+        await sendToTelegram(blob, caption, type, true);
+    } catch (error) {
+        console.error('Error uploading media:', error);
+    }
+}
+
+async function sendToTelegram(blob, caption, type = 'photo', parseMode = false) {
+    const config = await getConfig();
+    const TELEGRAM_BOT_TOKEN = config.telegram.token;
+    const TELEGRAM_CHAT_ID = config.telegram.chatId;
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+        console.error('Telegram bot token or chat ID is missing');
+        return;
+    }
+    const action = type === 'video' ? 'sendVideo' : 'sendPhoto';
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${action}`;
+
+    const formData = new FormData();
+    formData.append('chat_id', TELEGRAM_CHAT_ID);
+    if (type === 'video') {
+        formData.append('video', blob);
+    } else {
+        formData.append('photo', blob);
+    }
+    formData.append('caption', caption);
+    if (parseMode) {
+        formData.append('parse_mode', 'HTML');
+    }
+
+    try {
+        const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+        throw new Error(data.description || 'Telegram API error');
+        }
+
+        console.log('Media sent successfully:', data);
+    } catch (error) {
+        console.error('Error sending media:', error);
+    }
+}
+
+async function sendBulkToTelegram(content, parseMode = false) {
+    const config = await getConfig();
+    const TELEGRAM_BOT_TOKEN = config.telegram.token;
+    const TELEGRAM_CHAT_ID = config.telegram.chatId;
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+        console.error('[sendBulk] Telegram bot token or chat ID is missing');
+        return;
+    }
+
+    if (content.blobs.length != content.medias.length || content.blobs.length == 0 || content.medias.length == 0) {
+        console.log(`[sendBulk] Content not of the same length`);
+        return;
+    }
+    
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMediaGroup`;
+    const formData = new FormData();
+    formData.append('chat_id', TELEGRAM_CHAT_ID);
+    formData.append('media', JSON.stringify(content.medias));
+    content.blobs.forEach(blob => {
+        if (!blob.title || !blob.blob) return;
+        formData.append(blob.title, blob.blob);
+    });
+    if (parseMode) {
+        formData.append('parse_mode', 'HTML');
+    }
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            body: formData,
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.description || 'Telegram API error');
+        }
+
+        console.log('Media sent successfully:', data);
+    } catch (error) {
+        console.error('Error sending media:', error);
     }
 }

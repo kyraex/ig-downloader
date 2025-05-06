@@ -121,16 +121,19 @@ const appState = Object.freeze((() => {
 					</p>
 				</div>
 			</div>
-			<button class="download-button">Download</button>`));
+			<button class="download-button">Download</button>
+            <button class="send-button hide">Send Media</button>`));
     }
     function handleEvents() {
         const ESC_BUTTON = document.querySelector('.esc-button');
         const TITLE_CONTAINER = document.querySelector('.title-container').firstElementChild;
         const DISPLAY_CONTAINER = document.querySelector('.display-container');
         const DOWNLOAD_BUTTON = document.querySelector('.download-button');
+        const SEND_BUTTON = document.querySelector('.send-button');
         const IGNORE_FOCUS_ELEMENTS = ['INPUT', 'TEXTAREA'];
         const ESC_EVENT_KEYS = ['Escape', 'C', 'c'];
         const DOWNLOAD_EVENT_KEYS = ['D'];
+        const SEND_EVENT_KEYS = ['M']; 
         const SELECT_EVENT_KEYS = ['S', 's'];
         function setTheme() {
             const isDarkMode = localStorage.getItem('igt') === null ?
@@ -204,6 +207,7 @@ const appState = Object.freeze((() => {
         });
         ESC_BUTTON.addEventListener('click', () => {
             DISPLAY_CONTAINER.classList.add('hide');
+            SEND_BUTTON.classList.add('hide');
         });
         window.addEventListener('keydown', (e) => {
             if (window.location.pathname.startsWith('/direct')) return;
@@ -212,6 +216,9 @@ const appState = Object.freeze((() => {
             if (e.ctrlKey) return;
             if (DOWNLOAD_EVENT_KEYS.includes(e.key)) {
                 return DOWNLOAD_BUTTON.click();
+            }
+            if (SEND_EVENT_KEYS.includes(e.key)) {
+                return SEND_BUTTON.click();
             }
             if (ESC_EVENT_KEYS.includes(e.key)) {
                 return ESC_BUTTON.click();
@@ -236,9 +243,11 @@ const appState = Object.freeze((() => {
                 media.src = media.src;
             });
         });
+        SEND_BUTTON.addEventListener('click', handleSend);
         window.addEventListener('pathChange', () => {
             if (window.location.pathname.startsWith('/direct')) {
                 DOWNLOAD_BUTTON.setAttribute('hidden', 'true');
+                SEND_BUTTON.setAttribute('hidden', 'true');
                 DISPLAY_CONTAINER.classList.add('hide');
             }
             else DOWNLOAD_BUTTON.removeAttribute('hidden');
@@ -256,11 +265,12 @@ const appState = Object.freeze((() => {
         setTheme();
         if (window.location.pathname.startsWith('/direct')) {
             DOWNLOAD_BUTTON.classList.add('hide');
+            SEND_BUTTON.classList.add('hide');
             DISPLAY_CONTAINER.classList.add('hide');
         }
     }
     function run() {
-        document.querySelectorAll('.display-container, .download-button').forEach(node => {
+        document.querySelectorAll('.display-container, .download-button, .send-button').forEach(node => {
             node.remove();
         });
         initUI();
