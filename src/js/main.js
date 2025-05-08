@@ -133,8 +133,10 @@ const appState = Object.freeze((() => {
         const IGNORE_FOCUS_ELEMENTS = ['INPUT', 'TEXTAREA'];
         const ESC_EVENT_KEYS = ['Escape', 'C', 'c'];
         const DOWNLOAD_EVENT_KEYS = ['D'];
-        const SEND_EVENT_KEYS = ['M']; 
+        const SEND_EVENT_KEYS = ['m', 'M']; 
         const SELECT_EVENT_KEYS = ['S', 's'];
+        const SELECT_ALL_EVENT_KEYS = ['A', 'a'];
+        const CHECK_CURRENT_EVENT_KEYS = ['X', 'x']; 
         function setTheme() {
             const isDarkMode = localStorage.getItem('igt') === null ?
                 window.matchMedia('(prefers-color-scheme: dark)').matches :
@@ -186,6 +188,29 @@ const appState = Object.freeze((() => {
                 TITLE_CONTAINER.textContent = `Selected ${DISPLAY_CONTAINER.querySelectorAll('.overlay.checked').length}`;
             }
         }
+        // Helper function to get the element in the center of the viewport
+        function getElementInCenter() {
+            const container = document.querySelector('.medias-container');
+            const elements = Array.from(container.querySelectorAll('.overlay'));
+            const viewportHeight = window.innerHeight;
+            const viewportCenter = viewportHeight / 2;
+
+            let closestElement = null;
+            let closestDistance = Infinity;
+
+            elements.forEach(element => {
+                const rect = element.getBoundingClientRect();
+                const elementCenter = rect.top + rect.height / 2;
+                const distanceToCenter = Math.abs(viewportCenter - elementCenter);
+
+                if (distanceToCenter < closestDistance) {
+                    closestDistance = distanceToCenter;
+                    closestElement = element;
+                }
+            });
+
+            return closestElement;
+        }
         const handleTheme = new MutationObserver(setTheme);
         const handleVideo = new MutationObserver(pauseVideo);
         const handleToggleSelectMode = new MutationObserver(toggleSelectMode);
@@ -205,9 +230,19 @@ const appState = Object.freeze((() => {
         handleSelectMedia.observe(DISPLAY_CONTAINER.querySelector('.medias-container'), {
             attributes: true, childList: true, subtree: true
         });
-        ESC_BUTTON.addEventListener('click', () => {
-            DISPLAY_CONTAINER.classList.add('hide');
-            SEND_BUTTON.classList.add('hide');
+        let hoveredElement = null; // Variable to store the currently hovered element
+        // Add a mouseover event listener to track the hovered element
+        document.querySelector('.medias-container').addEventListener('mouseover', (e) => {
+            // Check if the hovered element is a media element (e.g., img or video)
+            if (e.target.matches('img, video')) {
+                hoveredElement = e.target; // Update the hovered element
+            }
+        });
+        // Add a mouseout event listener to clear the hovered element when the mouse leaves
+        document.querySelector('.medias-container').addEventListener('mouseout', (e) => {
+            if (e.target === hoveredElement) {
+                hoveredElement = null; // Clear the hovered element
+            }
         });
         window.addEventListener('keydown', (e) => {
             if (window.location.pathname.startsWith('/direct')) return;
@@ -225,6 +260,30 @@ const appState = Object.freeze((() => {
             }
             if (SELECT_EVENT_KEYS.includes(e.key) && !DISPLAY_CONTAINER.classList.contains('hide')) {
                 return TITLE_CONTAINER.classList.toggle('multi-select');
+            }
+            if (SELECT_ALL_EVENT_KEYS.includes(e.key) &&
+                !DISPLAY_CONTAINER.classList.contains('hide') &&
+                TITLE_CONTAINER.classList.contains('multi-select')
+            ) {
+                handleSelectAll(); // Call the function to select/deselect all
+            }
+            if (CHECK_CURRENT_EVENT_KEYS.includes(e.key) &&
+                !DISPLAY_CONTAINER.classList.contains('hide') &&
+                TITLE_CONTAINER.classList.contains('multi-select')
+            ) {
+                // Find parent div from hoveredElement, then check child class .overlay
+                const div = hoveredElement.closest('div');
+                const overlay = div.querySelector('.overlay');
+                console.log('hoveredElement', hoveredElement, 'overlay', overlay);
+                
+                if (overlay) {
+                    if (overlay.classList.contains('checked')) {
+                        overlay.classList.remove('checked'); // Unmark the hovered element
+                    }
+                    else {
+                        overlay.classList.add('checked'); // Mark the hovered element as checked
+                    }
+                }
             }
         });
         document.addEventListener('visibilitychange', () => {
