@@ -244,6 +244,10 @@ const appState = Object.freeze((() => {
                 hoveredElement = null; // Clear the hovered element
             }
         });
+        ESC_BUTTON.addEventListener('click', () => {
+            DISPLAY_CONTAINER.classList.add('hide');
+            SEND_BUTTON.classList.add('hide');
+        });
         window.addEventListener('keydown', (e) => {
             if (window.location.pathname.startsWith('/direct')) return;
             if (IGNORE_FOCUS_ELEMENTS.includes(e.target.tagName)) return;
