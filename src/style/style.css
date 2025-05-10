@@ -132,6 +132,7 @@
     cursor: pointer;
     display: none;
     transition: 0.1s;
+    color: black;
 }
 
 .display-container>.medias-container>div>.overlay>svg {
@@ -155,6 +156,12 @@
     position: relative;
     width: 100%;
     cursor: pointer;
+}
+
+.display-container>.medias-container>div.media-wrapper.active-glow {
+    box-shadow: 0 0 0 4px #bc2a8d , 0 0 12px 4px #e95950 ;
+    border-color: #8a3ab9 ;
+    z-index: 2;
 }
 
 .download-button {
@@ -281,6 +288,107 @@
     opacity: 0.6;
 }
 
+.shortcuts-tooltip {
+    position: relative;
+    display: inline-block;
+    left: 25%;
+    margin-top: 5px;
+    margin-right: 10px;
+}
+
+.shortcuts-icon {
+    cursor: pointer;
+    font-size: 20px;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.shortcuts-icon:hover {
+    opacity: 1;
+}
+
+.shortcuts-content {
+    visibility: hidden;
+    width: 260px;
+    background-color: white;
+    color: black;
+    text-align: left;
+    border-radius: 6px;
+    padding: 10px 15px;
+    position: absolute;
+    z-index: 20;
+    top: 140%;
+    right: -10px; /* Position from the right instead of left */
+    transform: translateX(0); /* Remove the horizontal centering */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.shortcuts-content::after {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    right: 15px; /* Position the arrow near the right side */
+    left: auto; /* Override the previous left positioning */
+    margin-left: 0; /* Remove the left margin */
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent white transparent;
+}
+
+.shortcuts-tooltip:hover .shortcuts-content {
+    visibility: visible;
+    opacity: 1;
+}
+
+.shortcuts-content h3 {
+    font-size: 14px;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.shortcut-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+.shortcut-keys {
+    text-align: right;
+}
+
+.shortcuts-content kbd {
+    display: inline-block;
+    padding: 2px 5px;
+    font-size: 11px;
+    line-height: 1;
+    color: #444;
+    background-color: #f7f7f7;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+    margin-left: 3px;
+}
+
+/* Dark mode support */
+.display-container.dark .shortcuts-content {
+    background-color: #333;
+    color: white;
+    border: 1px solid #555;
+}
+
+.display-container.dark .shortcuts-content::after {
+    border-color: transparent transparent #333 transparent;
+}
+
+.display-container.dark .shortcuts-content kbd {
+    background-color: #444;
+    color: #eee;
+    border-color: #666;
+}
+
 /*Loading Spin in photos conatiner*/
 
 @keyframes spin {
@@ -291,4 +399,18 @@
     100% {
         transform: translate(-50%, -50%) rotate(360deg);
     }
+}
+
+/* Add shake animation to the download button */
+.download-button.shake, .send-button.shake {
+    animation: shake 0.4s;
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-8px); }
+    80% { transform: translateX(8px); }
+    100% { transform: translateX(0); }
 }

@@ -113,6 +113,15 @@ const appState = Object.freeze((() => {
             `<div class="display-container hide">
 				<div class="title-container">
 					<span title="${APP_NAME}">Medias</span>
+                    <div class="shortcuts-tooltip">
+                        <span class="shortcuts-icon" title="Keyboard Shortcuts">⌨️</span>
+                        <div class="shortcuts-content">
+                            <h3>Keyboard Shortcuts</h3>
+                            <div id="shortcuts-list">
+                                <!-- Shortcuts will be dynamically inserted here -->
+                            </div>
+                        </div>
+                    </div>
 					<button class="esc-button">&times</button>
 				</div>
 				<div class="medias-container">
@@ -125,18 +134,24 @@ const appState = Object.freeze((() => {
             <button class="send-button hide">Send Media</button>`));
     }
     function handleEvents() {
-        const ESC_BUTTON = document.querySelector('.esc-button');
+        const keyboardShortcuts = getKeyboardShortcuts();
         const TITLE_CONTAINER = document.querySelector('.title-container').firstElementChild;
         const DISPLAY_CONTAINER = document.querySelector('.display-container');
-        const DOWNLOAD_BUTTON = document.querySelector('.download-button');
-        const SEND_BUTTON = document.querySelector('.send-button');
+        const ESC_BUTTON = document.querySelector(keyboardShortcuts.esc.target);
+        const FETCH_BUTTON = document.querySelector(keyboardShortcuts.fetchMedias.target);
+        const DOWNLOAD_BUTTON = document.querySelector(keyboardShortcuts.download.target);
+        const SEND_BUTTON = document.querySelector(keyboardShortcuts.send.target);
+        const SWITCH_TARGET_BUTTON = document.querySelector(keyboardShortcuts.switchTarget.target);
         const IGNORE_FOCUS_ELEMENTS = ['INPUT', 'TEXTAREA'];
-        const ESC_EVENT_KEYS = ['Escape', 'C', 'c'];
-        const DOWNLOAD_EVENT_KEYS = ['D'];
-        const SEND_EVENT_KEYS = ['m', 'M']; 
-        const SELECT_EVENT_KEYS = ['S', 's'];
-        const SELECT_ALL_EVENT_KEYS = ['A', 'a'];
-        const CHECK_CURRENT_EVENT_KEYS = ['X', 'x']; 
+
+        const ESC_EVENT_KEYS = keyboardShortcuts.esc.keys;
+        const FETCH_MEDIAS_EVENT_KEYS = keyboardShortcuts.fetchMedias.keys;
+        const DOWNLOAD_EVENT_KEYS = keyboardShortcuts.download.keys;
+        const SEND_EVENT_KEYS = keyboardShortcuts.send.keys;
+        const SELECT_EVENT_KEYS = keyboardShortcuts.toggleSelect.keys;
+        const SELECT_ALL_EVENT_KEYS = keyboardShortcuts.toggleSelectAll.keys;
+        const CHECK_CURRENT_EVENT_KEYS = keyboardShortcuts.selectCurrent.keys;
+        const SWITCH_TARGET_EVENT_KEYS = keyboardShortcuts.switchTarget.keys;
         function setTheme() {
             const isDarkMode = localStorage.getItem('igt') === null ?
                 window.matchMedia('(prefers-color-scheme: dark)').matches :
@@ -149,6 +164,23 @@ const appState = Object.freeze((() => {
                 DISPLAY_CONTAINER.classList.remove('dark');
                 DISPLAY_CONTAINER.firstElementChild.classList.remove('dark');
             }
+        }
+        function populateShortcutsTooltip() {
+            const shortcutsList = document.getElementById('shortcuts-list');
+            if (!shortcutsList) return;
+
+            const shortcutItems = [];
+            const keyboardShortcuts = getKeyboardShortcuts();
+            
+            // Create HTML for each shortcut group
+            for (const [key, properties] of Object.entries(keyboardShortcuts)) {
+                const description = properties.description;
+                const keys = properties.keys;
+                const keyboardShortcutItems = keys.map(k => `<kbd>${k === 'Escape' ? 'ESC' : k}</kbd>`).join(' or ');
+                shortcutItems.push(`<div class="shortcut-item"><span>${description}</span><span class="shortcut-keys">${keyboardShortcutItems}</span></div>`);
+            }
+            
+            shortcutsList.innerHTML = shortcutItems.join('');
         }
         function pauseVideo() {
             if (DISPLAY_CONTAINER.classList.contains('hide')) {
@@ -211,6 +243,24 @@ const appState = Object.freeze((() => {
 
             return closestElement;
         }
+        let currentMediaTarget = null;
+        function getNextMediaTarget() {
+            const overlays = Array.from(document.querySelectorAll('.medias-container .overlay'));
+            if (overlays.length === 0) return null;
+            let idx = overlays.indexOf(currentMediaTarget);
+            // Remove highlight from previous
+            if (currentMediaTarget) {
+                currentMediaTarget.closest('div.media-wrapper')?.classList.remove('active-glow');
+            }
+            idx = (idx + 1) % overlays.length;
+            currentMediaTarget = overlays[idx];
+            // Add highlight to new target
+            currentMediaTarget.closest('div.media-wrapper')?.classList.add('active-glow');
+            // Scroll into view
+            currentMediaTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return currentMediaTarget;
+        }
+        populateShortcutsTooltip();
         const handleTheme = new MutationObserver(setTheme);
         const handleVideo = new MutationObserver(pauseVideo);
         const handleToggleSelectMode = new MutationObserver(toggleSelectMode);
@@ -237,22 +287,37 @@ const appState = Object.freeze((() => {
             if (e.target.matches('img, video')) {
                 hoveredElement = e.target; // Update the hovered element
             }
+            // Clear currentMediaTarget and glow
+            if (currentMediaTarget) {
+                currentMediaTarget.closest('div.media-wrapper')?.classList.remove('active-glow');
+                currentMediaTarget = null;
+            }
         });
         // Add a mouseout event listener to clear the hovered element when the mouse leaves
         document.querySelector('.medias-container').addEventListener('mouseout', (e) => {
             if (e.target === hoveredElement) {
                 hoveredElement = null; // Clear the hovered element
             }
+            // Clear currentMediaTarget and glow
+            if (currentMediaTarget) {
+                currentMediaTarget.closest('div.media-wrapper')?.classList.remove('active-glow');
+                currentMediaTarget = null;
+            }
         });
         ESC_BUTTON.addEventListener('click', () => {
             DISPLAY_CONTAINER.classList.add('hide');
             SEND_BUTTON.classList.add('hide');
         });
+        let keyed_key = null;
         window.addEventListener('keydown', (e) => {
+            keyed_key = e.key;
             if (window.location.pathname.startsWith('/direct')) return;
             if (IGNORE_FOCUS_ELEMENTS.includes(e.target.tagName)) return;
             if (e.target.role === 'textbox') return;
             if (e.ctrlKey) return;
+            if (FETCH_MEDIAS_EVENT_KEYS.includes(e.key)) {
+                return FETCH_BUTTON.click();
+            }
             if (DOWNLOAD_EVENT_KEYS.includes(e.key)) {
                 return DOWNLOAD_BUTTON.click();
             }
@@ -275,20 +340,27 @@ const appState = Object.freeze((() => {
                 !DISPLAY_CONTAINER.classList.contains('hide') &&
                 TITLE_CONTAINER.classList.contains('multi-select')
             ) {
-                // Find parent div from hoveredElement, then check child class .overlay
-                const div = hoveredElement.closest('div');
-                const overlay = div.querySelector('.overlay');
-                console.log('hoveredElement', hoveredElement, 'overlay', overlay);
-                
-                if (overlay) {
-                    if (overlay.classList.contains('checked')) {
-                        overlay.classList.remove('checked'); // Unmark the hovered element
-                    }
-                    else {
-                        overlay.classList.add('checked'); // Mark the hovered element as checked
-                    }
+                // If currentMediaTarget is active, mark it; else fallback to hoveredElement
+                let target = currentMediaTarget;
+                if (!target) {
+                    if (!hoveredElement) return;
+                    // Find parent div from hoveredElement, then check child class .overlay
+                    const div = hoveredElement.closest('div');
+                    target = div.querySelector('.overlay');
+                }
+                if (target) {
+                    target.classList.toggle('checked');
                 }
             }
+            if (SWITCH_TARGET_EVENT_KEYS.includes(e.key) &&
+                !DISPLAY_CONTAINER.classList.contains('hide') &&
+                TITLE_CONTAINER.classList.contains('multi-select')
+            ) {
+                getNextMediaTarget();
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            keyed_key = null;
         });
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
@@ -300,7 +372,16 @@ const appState = Object.freeze((() => {
         handleLongClick(TITLE_CONTAINER, () => {
             TITLE_CONTAINER.classList.toggle('multi-select');
         }, handleSelectAll);
-        DOWNLOAD_BUTTON.addEventListener('click', handleDownload);
+        DOWNLOAD_BUTTON.addEventListener('click', () => {
+            if (DOWNLOAD_EVENT_KEYS.includes(keyed_key)) {
+                handleDownload();
+            }
+        });
+        FETCH_BUTTON.addEventListener('click', () => {
+            if (FETCH_MEDIAS_EVENT_KEYS.includes(keyed_key)) {
+                handleFetch();
+            }
+        });
         window.addEventListener('online', () => {
             DISPLAY_CONTAINER.querySelectorAll('img , video').forEach(media => {
                 media.src = media.src;

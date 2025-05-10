@@ -148,7 +148,12 @@ function setDownloadState(state = 'ready') {
             DOWNLOAD_BUTTON.disabled = true;
             MEDIAS_CONTAINER.replaceChildren();
         },
-        fail() { resetDownloadState(); },
+        fail() { 
+            resetDownloadState();
+            // Add shake effect
+            DOWNLOAD_BUTTON.classList.add('shake');
+            setTimeout(() => DOWNLOAD_BUTTON.classList.remove('shake'), 400); 
+        },
         success() {
             DOWNLOAD_BUTTON.disabled = false;
             appState.setPreviousValues();
@@ -173,10 +178,37 @@ function setDownloadState(state = 'ready') {
     options[state]();
 }
 
+async function handleFetch() {
+    let data = null;
+    const TITLE_CONTAINER = document.querySelector('.title-container').firstElementChild;
+    const DISPLAY_CONTAINER = document.querySelector('.display-container');
+    const DOWNLOAD_BUTTON = document.querySelector('.download-button');
+    const SEND_BUTTON = document.querySelector('.send-button');
+    const option = shouldDownload();
+
+    requestAnimationFrame(() => { 
+        DISPLAY_CONTAINER.classList.remove('hide'); 
+        SEND_BUTTON.classList.remove('hide');
+    });
+    
+    if (option === 'none') {
+        // Add shake effect
+        DOWNLOAD_BUTTON.classList.add('shake');
+        setTimeout(() => DOWNLOAD_BUTTON.classList.remove('shake'), 400); 
+        return;
+    }
+    setDownloadState('ready');
+    option === 'post' ? data = await downloadPostPhotos() : data = await downloadStoryPhotos(option);
+    if (!data) return setDownloadState('fail');
+    appState.currentDisplay = option;
+    renderMedias(data);
+}
+
 async function handleDownload() {
     let data = null;
     const TITLE_CONTAINER = document.querySelector('.title-container').firstElementChild;
     const DISPLAY_CONTAINER = document.querySelector('.display-container');
+    const DOWNLOAD_BUTTON = document.querySelector('.download-button');
     const SEND_BUTTON = document.querySelector('.send-button');
     const option = shouldDownload();
     const totalItemChecked = Array.from(document.querySelectorAll('.overlay.checked'));
@@ -190,12 +222,13 @@ async function handleDownload() {
         DISPLAY_CONTAINER.classList.remove('hide'); 
         SEND_BUTTON.classList.remove('hide');
     });
-    if (option === 'none') return;
-    setDownloadState('ready');
-    option === 'post' ? data = await downloadPostPhotos() : data = await downloadStoryPhotos(option);
-    if (!data) return setDownloadState('fail');
-    appState.currentDisplay = option;
-    renderMedias(data);
+    
+    if (option === 'none') {
+        // Add shake effect
+        DOWNLOAD_BUTTON.classList.add('shake');
+        setTimeout(() => DOWNLOAD_BUTTON.classList.remove('shake'), 400); 
+        return;
+    }
 }
 
 function renderMedias(data) {
@@ -294,6 +327,7 @@ async function handleSend() {
     let data = null;
     const TITLE_CONTAINER = document.querySelector('.title-container').firstElementChild;
     const DISPLAY_CONTAINER = document.querySelector('.display-container');
+    const SEND_BUTTON = document.querySelector('.send-button');
     const option = shouldDownload();
     const totalItemChecked = Array.from(document.querySelectorAll('.overlay.checked'));
     if (TITLE_CONTAINER.classList.contains('multi-select')
@@ -363,6 +397,12 @@ async function handleSend() {
             resetSendState();
         }
 
+    } else {
+        // Only if send button is visible
+        if (SEND_BUTTON.classList.contains('hide')) return;
+        // Add shake effect
+        SEND_BUTTON.classList.add('shake');
+        setTimeout(() => SEND_BUTTON.classList.remove('shake'), 400);
     }
 }
 
@@ -392,6 +432,51 @@ async function getConfig() {
         });
     }
     );
+}
+
+function getKeyboardShortcuts() {
+    return {
+        esc: {
+            keys: ['Escape', 'C'],
+            description: 'Close the current modal or popup',
+            target: '.esc-button'
+        },
+        fetchMedias: {
+            keys: ['d'],
+            description: 'Fetch medias for the current post',
+            target: '.download-button'
+        },
+        download: {
+            keys: ['D'],
+            description: 'Download the current selected media(s)',
+            target: '.download-button'
+        },
+        send: {
+            keys: ['F'],
+            description: 'Send the current media to configured integration(s)',
+            target: '.send-button'
+        },
+        toggleSelect: {
+            keys: ['s'],
+            description: 'Select/Deselect the current media',
+            target: '.medias-item'
+        },
+        toggleSelectAll: {
+            keys: ['X'],
+            description: 'Select/Deselect all medias',
+            target: '.select-all-button'
+        },
+        selectCurrent: {
+            keys: ['x'],
+            description: 'Select the current media',
+            target: '.medias-item'
+        },
+        switchTarget: {
+            'keys': ['S'],
+            'description': 'Switch between the current media and the next one',
+            'target': '.medias-item'
+        }
+    }
 }
 
 async function sendMedia(media) {
