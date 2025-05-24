@@ -164,6 +164,34 @@
     z-index: 2;
 }
 
+/* Toast notification styling */
+.display-container .toast {
+    position: absolute;
+    left: 50%;
+    bottom: 40px;
+    transform: translateX(-50%);
+    min-width: 180px;
+    max-width: 80%;
+    background: #e74c3c;
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 15px;
+    text-align: center;
+    z-index: 1001;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+.display-container .toast.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+.display-container.dark .toast {
+    background: #c0392b;
+    color: #fff;
+}
+
 .download-button {
     width: 120px;
     height: 30px;

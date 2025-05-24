@@ -124,6 +124,7 @@ const appState = Object.freeze((() => {
                     </div>
 					<button class="esc-button">&times</button>
 				</div>
+                <div class="toast" style="display:none"></div>
 				<div class="medias-container">
 					<p style="position: absolute;top: 50%;transform: translate(0%, -50%);">
 						Nothing to download
@@ -378,7 +379,7 @@ const appState = Object.freeze((() => {
             }
         });
         FETCH_BUTTON.addEventListener('click', () => {
-            if (FETCH_MEDIAS_EVENT_KEYS.includes(keyed_key)) {
+            if (FETCH_MEDIAS_EVENT_KEYS.includes(keyed_key) || keyed_key === null) {
                 handleFetch();
             }
         });

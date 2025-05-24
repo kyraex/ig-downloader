@@ -150,6 +150,7 @@ function setDownloadState(state = 'ready') {
         },
         fail() { 
             resetDownloadState();
+            showToast('Failed to fetch media');
             // Add shake effect
             DOWNLOAD_BUTTON.classList.add('shake');
             setTimeout(() => DOWNLOAD_BUTTON.classList.remove('shake'), 400); 
@@ -192,6 +193,7 @@ async function handleFetch() {
     });
     
     if (option === 'none') {
+        showToast('No media to download');
         // Add shake effect
         DOWNLOAD_BUTTON.classList.add('shake');
         setTimeout(() => DOWNLOAD_BUTTON.classList.remove('shake'), 400); 
@@ -224,6 +226,7 @@ async function handleDownload() {
     });
     
     if (option === 'none') {
+        showToast('No media to download');
         // Add shake effect
         DOWNLOAD_BUTTON.classList.add('shake');
         setTimeout(() => DOWNLOAD_BUTTON.classList.remove('shake'), 400); 
@@ -391,15 +394,25 @@ async function handleSend() {
             document.querySelectorAll('.overlay').forEach(element => {
                 element.classList.remove('checked');
             });
-            resetSendState();
+            // Set success state to button
+            SEND_BUTTON.textContent = 'Success';
+            setTimeout(() => {
+                resetSendState();
+            }, 1000);
+                
         } catch (error) {
             console.log(error);
-            resetSendState();
+            showToast(error.message ?? 'Failed to send media');
+            SEND_BUTTON.textContent = 'Failed';
+            setTimeout(() => {
+                resetSendState();
+            }, 1000);
         }
 
     } else {
         // Only if send button is visible
         if (SEND_BUTTON.classList.contains('hide')) return;
+        showToast('No media to send');
         // Add shake effect
         SEND_BUTTON.classList.add('shake');
         setTimeout(() => SEND_BUTTON.classList.remove('shake'), 400);
@@ -409,7 +422,7 @@ async function handleSend() {
 function resetSendState() {
     const SEND_BUTTON = document.querySelector('.send-button');
     SEND_BUTTON.classList.remove('loading');
-    SEND_BUTTON.textContent = 'Send';
+    SEND_BUTTON.textContent = 'Send Media';
     SEND_BUTTON.disabled = false;
 }
 
@@ -457,7 +470,7 @@ function getKeyboardShortcuts() {
             target: '.send-button'
         },
         toggleSelect: {
-            keys: ['s'],
+            keys: ['z'],
             description: 'Select/Deselect the current media',
             target: '.medias-item'
         },
@@ -472,11 +485,31 @@ function getKeyboardShortcuts() {
             target: '.medias-item'
         },
         switchTarget: {
-            'keys': ['S'],
+            'keys': ['Z'],
             'description': 'Switch between the current media and the next one',
             'target': '.medias-item'
         }
     }
+}
+
+function showToast(message, timeout = 2500) {
+    const container = document.querySelector('.display-container');
+    if (!container) return;
+    // If container is hidden, do not show toast
+    if (container.classList.contains('hide')) return;
+    let toast = container.querySelector('.toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.className = 'toast';
+        container.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.style.display = 'block';
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => { toast.style.display = 'none'; }, 300);
+    }, timeout);
 }
 
 async function sendMedia(media) {
